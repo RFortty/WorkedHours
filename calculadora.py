@@ -1,6 +1,8 @@
 # Instalar biblioteca TKInter: pip install tkinter
 # Instalar biblioteca Custom TKInter: pip install customtkinter
 # Instalar biblioteca Pillow: pip install pillow
+# Instalar biblioteca para PDF: pip install reportlab
+
 import customtkinter
 import tkinter as tk
 from tkinter import *
@@ -8,6 +10,11 @@ from tkinter import messagebox
 from tkinter import Tk, ttk
 from PIL import Image, ImageTk
 from datetime import date, datetime
+
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.lib.units import cm
 
 
 ### C o r e s ###
@@ -513,7 +520,7 @@ logo_total = logo_total.resize((32,32))
 logo_total = ImageTk.PhotoImage(logo_total)
 
 
-### Função C Á L C U L A R : ###
+# # # Função C Á L C U L A R : # # #
 
 def Calcular():
     #pass
@@ -808,6 +815,10 @@ def Calcular():
         fg='red')
     total_liq.place(x=5, y=0)
 
+    # Botão gerar PDF
+    pdf = Button(frame_total, image=logo_pdf, cursor='hand2', command=gerar_pdf)
+    pdf.place(x=460, y=0)
+
     # Horas Trabalhadas
     # ABA Horas
     lbl_hora = Label(aba3, 
@@ -953,8 +964,79 @@ logo_horas = ImageTk.PhotoImage(logo_horas)
 frame_total = Frame(janela, width=1040, height=35, pady=0, bg='yellow')
 frame_total.grid(row=3, column=0)
 
+logo_pdf = Image.open('images/pdf.png')
+logo_pdf = logo_pdf.resize((32,32))
+logo_pdf = ImageTk.PhotoImage(logo_pdf)
+
 frame_footer = Frame(janela, width=1043, height=15, pady=0, bg=cor6)
 frame_footer.grid(row=4, column=0)
+
+# # #
+# Função para gerar PDF padronizado com os dados fornecidos
+def pdf_padrao(dados, nome_arquivo):
+    try:
+        # Parametros:
+        # - dados: informações fornecidas pelo usuário com o título e valor de cada campo
+        # - nome_arquivo: Nome do arquivo PDF que será gerado
+
+        pdf = canvas.Canvas(nome_arquivo, pagesize=A4)
+        largura, altura = A4
+        y = altura - 2 * cm
+
+        # Configurações da tabela
+        largura_colunas = [5 * cm, 5 * cm, 5 *cm]
+        altura_linha = 1 * cm
+
+        # Cabeçalho da tabela
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(2 * cm, y, "Relatório de Dados")
+        y -= 2 * cm
+
+        # Desenhar cabeçalhos com fundo cinza claro e borda
+        headers = ["Funcionário", "Data Admissão", "Dependentes"]
+        pdf.setFont("Helvetica-Bold", 10)
+        
+        for i, header in enumerate(headers):
+            x = 2 * cm + sum(largura_colunas[:i])
+            pdf.setFillColor(colors.lightgrey)
+            pdf.rect(x, y - altura_linha, largura_colunas[i], altura_linha, fill=True, stroke=True)
+            pdf.setFillColor(colors.black)
+            # Centralizar o texto horizontalmente na celula
+            text_x = x + (largura_colunas[i] / 2) - (pdf.stringWidth(header, "Helvetica-Bold", 10) / 2)
+            # Centraliza o texto verticalmente na celula
+            text_y = y - altura_linha / 2 - 4
+            pdf.drawString(text_x, text_y, header)
+        
+        # Desenhar as linhas de dados com fudo branco e borda
+        y -= altura_linha
+        pdf.setFont("Helvetica", 10)
+
+        for linha in dados:
+            for i, item in enumerate(linha):
+                x = 2 * cm + sum(largura_colunas[:i])
+                pdf.setFillColor(colors.white)
+                pdf.rect(x, y - altura_linha, largura_colunas[i], altura_linha, fill=True, stroke=True)
+                pdf.setFillColor(colors.black)
+                pdf.drawString(x + 0.2 * cm, y - 0.75 * cm, item)
+            y -= altura_linha
+        
+        pdf.save()
+
+        print(f"O PDF '{nome_arquivo}' foi criado com Sucesso!")
+        messagebox.showinfo("Success:", f"O PDF '{nome_arquivo}' foi criado com Sucesso!")
+
+    except Exception as e:
+        messagebox.showerror("Error:", f"Erro ao gerar PDF!\n\n{e}")
+
+
+# Função para coletar os dados de entrada e gerar o PDF
+def gerar_pdf():
+    dados = [
+        [edt_nome.get(), edt_adm.get(), edt_depend.get()]
+    ]
+       
+    nome_arquivo = "WorkedHours.pdf"
+    pdf_padrao(dados, nome_arquivo)
 
 
 janela.mainloop()
